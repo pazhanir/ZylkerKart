@@ -1,22 +1,14 @@
-# Base Package
-FROM node:14
-
-MAINTAINER Ujjaval Desai
-
-# Create app directory
-WORKDIR /usr/src/app
-
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY ./client/package*.json ./
-
+# Stage 0: Build
+FROM node:14 as build-stage
+WORKDIR /app
+COPY package*.json ./
 RUN npm install
-
-# Bundle app source
 COPY . .
+RUN npm run build
 
-#RUN yarn install
-
-# Initiate npm start
-CMD [ "npm", "run-script", "start_docker_dev" ]
+# Stage 1: Serve with Nginx
+FROM nginx:alpine
+COPY --from=build-stage /app/build /usr/share/nginx/html
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

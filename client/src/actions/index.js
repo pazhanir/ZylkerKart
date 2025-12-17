@@ -12,15 +12,15 @@ import {
     HANDLE_GOOGLE_AUTH_SIGN_OUT,
     PAYMENT_RESPONSE_ERROR, SEARCH_KEYWORD_ERROR, SEARCH_KEYWORD,
 } from './types';
-import {INTERNAL_SERVER_ERROR_CODE, BAD_REQUEST_ERROR_CODE} from '../constants/http_error_codes'
-import {SHOPPERS_PRODUCT_INFO_COOKIE, CART_TOTAL_COOKIE, AUTH_DETAILS_COOKIE} from '../constants/cookies'
+import { INTERNAL_SERVER_ERROR_CODE, BAD_REQUEST_ERROR_CODE } from '../constants/http_error_codes'
+import { SHOPPERS_PRODUCT_INFO_COOKIE, CART_TOTAL_COOKIE, AUTH_DETAILS_COOKIE } from '../constants/cookies'
 import history from "../history";
-import {Base64} from 'js-base64';
+import { Base64 } from 'js-base64';
 import Cookies from 'js-cookie';
 import log from "loglevel";
-import {commonServiceAPI, authServiceAPI, searchSuggestionServiceAPI} from "../api/service_api";
+import { commonServiceAPI, authServiceAPI, searchSuggestionServiceAPI } from "../api/service_api";
 import axios from 'axios';
-import {DEFAULT_SEARCH_SUGGESTION_API, SEARCH_SUGGESTION_API} from "../constants/api_routes";
+import { DEFAULT_SEARCH_SUGGESTION_API, SEARCH_SUGGESTION_API } from "../constants/api_routes";
 
 export const setAuthDetailsFromCookie = savedResponse => {
     log.info(`[ACTION]: setTokenFromCookie savedResponse = ${savedResponse}`)
@@ -53,18 +53,18 @@ export const signIn = formValues => async dispatch => {
     authServiceAPI.defaults.headers.common['Authorization'] = `Basic ${hash}`
     const response = await authServiceAPI.post('/authenticate').catch(err => {
         log.info(`[ACTION]: dispatch HANDLE_SIGN_IN_ERROR err.message = ${err.message}`)
-        dispatch({type: HANDLE_SIGN_IN_ERROR, payload: err.message});
+        dispatch({ type: HANDLE_SIGN_IN_ERROR, payload: err.message });
     });
 
     if (response) {
         if (response.data.jwt) {
             log.info(`[ACTION]: dispatch HANDLE_SIGN_IN response.data.jwt = ${response.data.jwt}`)
-            dispatch({type: HANDLE_SIGN_IN, payload: response.data});
-            Cookies.set(AUTH_DETAILS_COOKIE, response.data, {expires: 2});
+            dispatch({ type: HANDLE_SIGN_IN, payload: response.data });
+            Cookies.set(AUTH_DETAILS_COOKIE, response.data, { expires: 2 });
             history.push('/');
         } else {
             log.info(`[ACTION]: dispatch HANDLE_SIGN_IN_ERROR response.data.error = ${response.data.error}`)
-            dispatch({type: HANDLE_SIGN_IN_ERROR, payload: response.data.error});
+            dispatch({ type: HANDLE_SIGN_IN_ERROR, payload: response.data.error });
         }
     }
 }
@@ -87,61 +87,61 @@ export const signInUsingOAuth = googleAuth => async dispatch => {
         // sign in
         googleAuth.signIn(JSON.parse(googleAuth.currentUser.get().getId())).then(async () => {
 
-                // if sign in works
-                if (googleAuth.isSignedIn.get()) {
-                    log.info('[signInUsingOAuth] User is signed in successfully')
+            // if sign in works
+            if (googleAuth.isSignedIn.get()) {
+                log.info('[signInUsingOAuth] User is signed in successfully')
 
-                    dispatch({
-                        type: HANDLE_GOOGLE_AUTH_SIGN_IN,
-                        payload: {
-                            firstName: googleAuth.currentUser.get().getBasicProfile().getGivenName(),
-                            oAuth: googleAuth
-                        }
-                    })
-                    history.push("/");
+                dispatch({
+                    type: HANDLE_GOOGLE_AUTH_SIGN_IN,
+                    payload: {
+                        firstName: googleAuth.currentUser.get().getBasicProfile().getGivenName(),
+                        oAuth: googleAuth
+                    }
+                })
+                history.push("/");
 
-                    // try {
-                    // let userProfile = googleAuth.currentUser.get().getBasicProfile()
-                    // if (userProfile) {
-                    //     const response = await authServiceAPI.post('/signin-using-google-auth', {
-                    //         'id': userProfile.getId(),
-                    //         'firstname': userProfile.getGivenName(),
-                    //         'lastname': userProfile.getFamilyName(),
-                    //         'email': userProfile.getEmail(),
-                    //         'username': null,
-                    //         'password': null,
-                    //     }).catch(err => {
-                    //         log.info(`[ACTION]: signUp dispatch HANDLE_SIGN_UP_ERROR err.message = ${err.message}.`)
-                    //     });
-                    //
-                    //     if(response.data === "success") {
-                    //         // here we are sure that we signed in and now dispatch.
-                    //         dispatch({
-                    //             type: HANDLE_GOOGLE_AUTH_SIGN_IN,
-                    //             payload: {
-                    //                 oAuth: googleAuth
-                    //             }
-                    //         })
-                    //         history.push("/");
-                    //     } else {
-                    //         dispatch({type: HANDLE_SIGN_IN_ERROR, payload: response.data.error});
-                    //     }
+                // try {
+                // let userProfile = googleAuth.currentUser.get().getBasicProfile()
+                // if (userProfile) {
+                //     const response = await authServiceAPI.post('/signin-using-google-auth', {
+                //         'id': userProfile.getId(),
+                //         'firstname': userProfile.getGivenName(),
+                //         'lastname': userProfile.getFamilyName(),
+                //         'email': userProfile.getEmail(),
+                //         'username': null,
+                //         'password': null,
+                //     }).catch(err => {
+                //         log.info(`[ACTION]: signUp dispatch HANDLE_SIGN_UP_ERROR err.message = ${err.message}.`)
+                //     });
+                //
+                //     if(response.data === "success") {
+                //         // here we are sure that we signed in and now dispatch.
+                //         dispatch({
+                //             type: HANDLE_GOOGLE_AUTH_SIGN_IN,
+                //             payload: {
+                //                 oAuth: googleAuth
+                //             }
+                //         })
+                //         history.push("/");
+                //     } else {
+                //         dispatch({type: HANDLE_SIGN_IN_ERROR, payload: response.data.error});
+                //     }
 
-                    // dispatch({
-                    //     type: HANDLE_GOOGLE_AUTH_SIGN_IN,
-                    //     payload: {
-                    //         oAuth: googleAuth
-                    //     }
-                    // })
-                    // history.push("/");
-                    // }
-                    // } catch
-                    //     (e) {
-                    //     log.info(`[signInUsingOAuth] Unable to retrieve user profile.`)
-                    //     dispatch({type: HANDLE_SIGN_IN_ERROR, payload: "Unable to retrieve user profile."});
-                    // }
-                }
+                // dispatch({
+                //     type: HANDLE_GOOGLE_AUTH_SIGN_IN,
+                //     payload: {
+                //         oAuth: googleAuth
+                //     }
+                // })
+                // history.push("/");
+                // }
+                // } catch
+                //     (e) {
+                //     log.info(`[signInUsingOAuth] Unable to retrieve user profile.`)
+                //     dispatch({type: HANDLE_SIGN_IN_ERROR, payload: "Unable to retrieve user profile."});
+                // }
             }
+        }
         )
     }
 }
@@ -177,7 +177,7 @@ export const signUp = formValues => async dispatch => {
         'email': formValues.email.toLowerCase(),
     }).catch(err => {
         log.info(`[ACTION]: signUp dispatch HANDLE_SIGN_UP_ERROR err.message = ${err.message}.`)
-        dispatch({type: HANDLE_SIGN_UP_ERROR, payload: err.message});
+        dispatch({ type: HANDLE_SIGN_UP_ERROR, payload: err.message });
     });
 
     if (response) {
@@ -187,7 +187,7 @@ export const signUp = formValues => async dispatch => {
         } else {
             console.log('response.data.error_msg = ' + response.data.error_msg);
             log.info(`[ACTION]: dispatch HANDLE_SIGN_UP_ERROR response.data.error_msg = ${response.data.error_msg}.`)
-            dispatch({type: HANDLE_SIGN_UP_ERROR, payload: response.data.error_msg});
+            dispatch({ type: HANDLE_SIGN_UP_ERROR, payload: response.data.error_msg });
         }
     }
 }
@@ -197,7 +197,7 @@ export const sendPaymentToken = (token) => async dispatch => {
     if (!token || (token && !token.hasOwnProperty("id"))) {
         dispatch({
             type: PAYMENT_RESPONSE_ERROR,
-            payload: {errorMsg: "Unable to fetch token. Try again later"}
+            payload: { errorMsg: "Unable to fetch token. Try again later" }
         })
     }
 
@@ -238,7 +238,7 @@ export const sendPaymentToken = (token) => async dispatch => {
 
             dispatch({
                 type: PAYMENT_RESPONSE,
-                payload: {...paymentResponse, error: false, errorMsg: null}
+                payload: { ...paymentResponse, error: false, errorMsg: null }
             })
 
         })
@@ -246,7 +246,7 @@ export const sendPaymentToken = (token) => async dispatch => {
             log.error(`[sendPaymentToken]: Error = ${error} `)
             dispatch({
                 type: PAYMENT_RESPONSE_ERROR,
-                payload: {errorMsg: "Something Went Wrong"}
+                payload: { errorMsg: `Something Went Wrong: ${error.message}` }
             })
         });
 }
@@ -276,7 +276,7 @@ export const getDataViaAPI = (type, route, query, synchronous = true) => async d
 
         if (isFetchError) {
             log.info(`[ACTION]: unable to fetch response for API = ${route}`)
-            dispatch({type: type, payload: {isLoading: false, statusCode: INTERNAL_SERVER_ERROR_CODE}});
+            dispatch({ type: type, payload: { isLoading: false, statusCode: INTERNAL_SERVER_ERROR_CODE } });
         }
     }
 }
@@ -284,11 +284,11 @@ export const getDataViaAPI = (type, route, query, synchronous = true) => async d
 export const processResponse = (response, query, type, uri, dispatch) => {
     log.debug(`[ACTION]: Data = ${JSON.parse(JSON.stringify(response.data))}.`)
     if (response.data !== null) {
-        let payload = {isLoading: false, data: JSON.parse(JSON.stringify(response.data))}
+        let payload = { isLoading: false, data: JSON.parse(JSON.stringify(response.data)) }
         if (query) {
             dispatch({
                 type: type, payload:
-                    {...payload, query: query}
+                    { ...payload, query: query }
             });
         } else {
             dispatch({
@@ -301,7 +301,7 @@ export const processResponse = (response, query, type, uri, dispatch) => {
             history.push(uri)
         }
     } else {
-        dispatch({type: type, payload: {isLoading: false, statusCode: BAD_REQUEST_ERROR_CODE}});
+        dispatch({ type: type, payload: { isLoading: false, statusCode: BAD_REQUEST_ERROR_CODE } });
     }
 }
 
@@ -338,7 +338,7 @@ export const getSearchSuggestions = (prefix) => async dispatch => {
         const response = await searchSuggestionServiceAPI.get(uri)
             .catch(err => {
                 log.info(`[ACTION]: unable to fetch response for API = ${uri}`)
-                dispatch({type: SEARCH_KEYWORD_ERROR});
+                dispatch({ type: SEARCH_KEYWORD_ERROR });
                 responseError = true
             });
 
@@ -348,7 +348,7 @@ export const getSearchSuggestions = (prefix) => async dispatch => {
 
         log.debug(`[ACTION]: Data = ${JSON.parse(JSON.stringify(response.data))}.`)
         dispatch({
-            type: SEARCH_KEYWORD, payload: {data: JSON.parse(JSON.stringify(response.data))}
+            type: SEARCH_KEYWORD, payload: { data: JSON.parse(JSON.stringify(response.data)) }
         });
     }
 
@@ -360,11 +360,11 @@ export const setDefaultSearchSuggestions = () => dispatch => {
     searchSuggestionServiceAPI.get(DEFAULT_SEARCH_SUGGESTION_API)
         .then(response => {
             dispatch({
-                type: SEARCH_KEYWORD, payload: {data: JSON.parse(JSON.stringify(response.data))}
+                type: SEARCH_KEYWORD, payload: { data: JSON.parse(JSON.stringify(response.data)) }
             });
         })
         .catch(err => {
             log.info(`[ACTION]: unable to fetch response for API = ${DEFAULT_SEARCH_SUGGESTION_API}`)
-            dispatch({type: SEARCH_KEYWORD_ERROR});
+            dispatch({ type: SEARCH_KEYWORD_ERROR });
         });
 }

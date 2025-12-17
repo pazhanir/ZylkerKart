@@ -7,9 +7,17 @@ import time
 app = FastAPI()
 
 # Enable CORS for all origins (matching the Spring Boot @CrossOrigin behavior)
+# Handle Private Network Access (for Chrome)
+@app.middleware("http")
+async def add_private_network_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
