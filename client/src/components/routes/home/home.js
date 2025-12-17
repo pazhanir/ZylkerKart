@@ -1,27 +1,27 @@
-import React, {useEffect} from "react";
-import {Dimmer} from "semantic-ui-react";
+import React, { useEffect } from "react";
+import { Dimmer } from "semantic-ui-react";
 import VerticalSlider from "./verticalSlider";
 import TopCategoriesAndBrands from "./topCategoriesAndBrands";
-import {StyledSegment, StyledDimmer} from "../../../styles/semanticUI/customStyles";
-import {connect, useSelector} from "react-redux";
-import {DocumentTitle} from "../../ui/documentTitle";
-import {getDataViaAPI, setDefaultSearchSuggestions} from "../../../actions";
+import { StyledSegment, StyledDimmer } from "../../../styles/semanticUI/customStyles";
+import { connect, useSelector } from "react-redux";
+import { DocumentTitle } from "../../ui/documentTitle";
+import { getDataViaAPI, setDefaultSearchSuggestions } from "../../../actions";
 import log from 'loglevel';
-import {homePageDataReducer} from "../../../reducers/screens/commonScreenReducer";
+import { homePageDataReducer } from "../../../reducers/screens/commonScreenReducer";
 import HomeMenuIcons from "./homeMenuIcons";
 import Hidden from "@material-ui/core/Hidden";
 import Spinner from "../../ui/spinner";
-import {HTTPError} from "../../ui/error/httpError";
-import {LOAD_HOME_PAGE} from "../../../actions/types";
-import {BadRequest} from "../../ui/error/badRequest";
-import {HOME_PAGE_DATA_API} from "../../../constants/api_routes";
-import {HOME_PAGE_API_OBJECT_LEN} from "../../../constants/constants"
-import {authServiceAPI} from "../../../api/service_api";
+import { HTTPError } from "../../ui/error/httpError";
+import { LOAD_HOME_PAGE } from "../../../actions/types";
+import { BadRequest } from "../../ui/error/badRequest";
+import { HOME_PAGE_DATA_API } from "../../../constants/api_routes";
+import { HOME_PAGE_API_OBJECT_LEN } from "../../../constants/constants"
+import { authServiceAPI } from "../../../api/service_api";
 import axios from "axios";
-import {Grid} from "@material-ui/core";
+import { Grid } from "@material-ui/core";
 
 const Home = props => {
-    const {hover} = useSelector(state => state.tabHoverEventReducer)
+    const { hover } = useSelector(state => state.tabHoverEventReducer)
     const homeAPIData = useSelector(state => state.homePageDataReducer)
 
     // Main screen API is loaded during Component Did mount
@@ -61,17 +61,12 @@ const Home = props => {
         log.info("[Home]: loading")
         return <Spinner textComponent={
             <Grid container direction="column" spacing={1} style={{
-                alignItems: "center", fontSize: "1.1rem", fontWeight: "bold"}}>
+                alignItems: "center", fontSize: "1.1rem", fontWeight: "bold"
+            }}>
                 <Grid item>
                     Please wait! This will take 1-2 minutes to load page for the first time.
                 </Grid>
-                <Grid item>
-                    The backend service on heroku was in sleep mode and now its started.
-                </Grid>
-                <Grid item>
-                    It will sleep again if the backend service is inactive for 30 minutes.
-                </Grid>
-            </Grid>}/>
+            </Grid>} />
     } else {
 
         // check if we got the data from the API
@@ -84,31 +79,31 @@ const Home = props => {
 
             // if we can't get the data then the front end
             // didn't use the API correctly.
-            return <BadRequest/>
+            return <BadRequest />
 
             // if statusCode exist in the object then
             // we are sure that something went wrong at server side while
             // fetching the API
         } else if (homeAPIData.hasOwnProperty('statusCode')) {
             log.info(`[Home]: homeAPIData.statusCode = ${homeAPIData.statusCode}`)
-            return <HTTPError statusCode={homeAPIData.statusCode}/>
+            return <HTTPError statusCode={homeAPIData.statusCode} />
         }
     }
 
     log.info("[Home]: Rendering Home Component")
     return (
         <Dimmer.Dimmable as={StyledSegment} dimmed={hover}>
-            <DocumentTitle title="Online Shopping for Women, Men, Kids Fashion & Lifestyle - Shoppers"/>
+            <DocumentTitle title="Online Shopping for Women, Men, Kids Fashion & Lifestyle - ZylkerKart" />
             <Hidden only={['xs', 'lg']}>
-                <HomeMenuIcons/>
+                <HomeMenuIcons />
             </Hidden>
             <Hidden only={['xs']}>
-                <VerticalSlider/>
+                <VerticalSlider />
             </Hidden>
-            <TopCategoriesAndBrands/>
-            <StyledDimmer active={hover}/>
+            <TopCategoriesAndBrands />
+            <StyledDimmer active={hover} />
         </Dimmer.Dimmable>
     )
 }
 
-export default connect(null, {getDataViaAPI, setDefaultSearchSuggestions})(Home);
+export default connect(null, { getDataViaAPI, setDefaultSearchSuggestions })(Home);

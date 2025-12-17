@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-        - ./mysql-db/user.sql:/docker-entrypoint-initdb.d/user.sql
+      - ./mysql-db/user.sql:/docker-entrypoint-initdb.d/user.sql
     ports:
       - 3306:3306
     networks:
@@ -95,7 +95,7 @@ services:
       - react-ui
       - common-data-service
       - authentication-service
-      - payment-service
+      - payment-gateway-service
     environment:
       - ACTIVE_PROFILE=${ACTIVE_PROFILE}
       - PORT=${SEARCH_SUGGESTION_SERVICE_PORT}
@@ -107,11 +107,11 @@ services:
     networks:
       - spring-cloud-microservices
 
-  payment-service:
+  payment-gateway-service:
     build:
       context: .
-      dockerfile: ./server/payment-service/Dockerfile-dev
-    container_name: payment-service-container
+      dockerfile: ./server/payment-gateway-service/Dockerfile
+    container_name: payment-gateway-service-container
     restart: always
     depends_on:
       - mysql-db

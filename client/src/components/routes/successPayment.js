@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import log from 'loglevel'
-import { Grid } from "@material-ui/core";
+import { Grid, Paper, Button, Divider, Typography } from "@material-ui/core";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { BadRequest } from "../ui/error/badRequest";
 import {
@@ -55,131 +56,157 @@ export const SuccessPayment = () => {
         return null
     }
 
-    const renderShippingAddress = () => {
-        const shippingAddressAttributes = [
-            `${shippingAddressForm.firstName} ${shippingAddressForm.lastName}`,
-            shippingAddressForm.addressLine1, shippingAddressForm.addressLine2,
-            `${shippingAddressForm.city},
-            ${shippingAddressForm.stateCode} - ${shippingAddressForm.zipCode}`,
-            `Mobile - ${shippingAddressForm.phoneNumber}`,
-            `Email - ${shippingAddressForm.email}`
-        ]
-        return shippingAddressAttributes.map((value) => {
-            return (
-                <Grid key={value} item>
-                    {value}
-                </Grid>
-            )
-        })
-    }
+    // Helper to render section headers
+    const SectionHeader = ({ icon, title }) => (
+        <Grid container alignItems="center" spacing={1} style={{ marginBottom: '1rem', color: '#555' }}>
+            <Grid item>{icon}</Grid>
+            <Grid item>
+                <Typography variant="h6" style={{ fontWeight: 600 }}>{title}</Typography>
+            </Grid>
+        </Grid>
+    );
 
     const renderShoppingProducts = () => {
-        let products = []
+        if (!shoppingBagProducts.data) return null;
 
-        if (!shoppingBagProducts.data) {
-            log.info(`[SuccessPayment] shoppingBagProducts.data is null`)
-            return null
-        }
-
-        for (const [id, qty] of Object.entries(addToCart.productQty)) {
-            let product = shoppingBagProducts.data[id]
-
-            products.push(<Grid key={id} container spacing={2} style={{ paddingTop: "2rem" }}>
-                <Grid item>
-                    <img src={product.imageURL}
-                        alt={product.name} style={{ height: 100, width: 80 }} />
-                </Grid>
-
-                <Grid item container xs={5} direction="column" style={{ fontWeight: "bold" }}>
-                    <Grid item>
-                        {product.name}
+        return Object.entries(addToCart.productQty).map(([id, qty]) => {
+            const product = shoppingBagProducts.data[id];
+            return (
+                <Grid key={id} container alignItems="center" style={{ padding: "1rem 0", borderBottom: '1px solid #eee' }}>
+                    <Grid item xs={3} sm={2}>
+                        <img src={product.imageURL} alt={product.name} style={{ width: '100%', maxWidth: 80, borderRadius: 4 }} />
                     </Grid>
-                    <Grid item>
-                        {product.productBrandCategory.type}
-                    </Grid>
-                    <Grid item>
-                        {`Qty: ${qty} X ${product.price} = ${product.price * qty}`}
+                    <Grid item xs={9} sm={10} container direction="column">
+                        <Typography variant="subtitle1" style={{ fontWeight: 'bold' }}>{product.name}</Typography>
+                        <Typography variant="body2" color="textSecondary">{product.productBrandCategory.type}</Typography>
+                        <Typography variant="body2" style={{ marginTop: 4 }}>
+                            Qty: <b>{qty}</b> &nbsp;x&nbsp; ${product.price} = <b>${product.price * qty}</b>
+                        </Typography>
                     </Grid>
                 </Grid>
-            </Grid>)
-        }
+            );
+        });
+    };
 
-        return products
-    }
+    log.info('[SuccessPayment] Rendering SuccessPayment Component (Redesigned)')
 
-    log.info('[SuccessPayment] Rendering SuccessPayment Component')
+    // Icons
+    const SuccessIcon = () => <svg style={{ width: 60, height: 60, color: '#4caf50', marginBottom: 16 }} viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>;
+    const ReceiptIcon = () => <svg style={{ width: 24, height: 24 }} viewBox="0 0 24 24"><path fill="currentColor" d="M18 17H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2zM3 22l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20z" /></svg>;
+    const TruckIcon = () => <svg style={{ width: 24, height: 24 }} viewBox="0 0 24 24"><path fill="currentColor" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" /></svg>;
+    const CardIcon = () => <svg style={{ width: 24, height: 24 }} viewBox="0 0 24 24"><path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" /></svg>;
+
     return (
-        <Grid item xs={8} container spacing={2} style={{
-            padding: "2rem", margin: "2rem", border: "1px solid black",
-            fontSize: "1.2rem"
-        }}>
+        <Grid container justify="center" style={{ padding: "3rem 1rem", backgroundColor: "#f9f9f9", minHeight: '90vh' }}>
             <DocumentTitle title="Payment Success" />
-            <Grid item xs={12}
-                style={{ border: "1px solid green", padding: "2rem", fontSize: "2rem", fontWeight: "bold" }}>
-                Payment Successful. Thank You For Shopping at ZylkerKart.
-            </Grid>
-            <Grid item xs={12} style={{ marginTop: "2rem", fontWeight: "bold" }}>
-                {`Your order is placed successfully. Your order id is ${paymentResponse.order_id}.`}
-            </Grid>
 
-            <Grid item container spacing={2}>
-                <Grid item container justify="flex-end" xs={2}>
-                    Receipt:
-                </Grid>
-                <Grid item container xs={8} direction="column" style={{ fontWeight: "bold" }}>
-                    <a href={paymentResponse.receipt_url} target="_blank" rel="noopener noreferrer">
-                        Order-Receipt
-                    </a>
-                </Grid>
-            </Grid>
+            <Grid item xs={12} md={8} lg={6}>
+                <Paper elevation={3} style={{ padding: "2rem 3rem", borderRadius: 12 }}>
 
-            <Grid item container spacing={2}>
-                <Grid item container justify="flex-end" xs={2}>
-                    Delivery Address:
-                </Grid>
-                <Grid item container xs={8} direction="column" style={{ fontWeight: "bold" }}>
-                    {renderShippingAddress()}
-                </Grid>
-            </Grid>
-
-            <Grid item container spacing={2}>
-                <Grid item container justify="flex-end" xs={2}>
-                    Payment Details:
-                </Grid>
-                <Grid item container xs={8} direction="column" style={{ fontWeight: "bold" }}>
-                    <Grid item>
-                        {`${paymentResponse.brand.toUpperCase()} ending in ${paymentResponse.last4}`}
+                    {/* Header Section */}
+                    <Grid container direction="column" alignItems="center" style={{ marginBottom: "2rem" }}>
+                        <SuccessIcon />
+                        <Typography variant="h4" style={{ fontWeight: 700, color: '#2e7d32', marginBottom: '0.5rem' }}>
+                            Payment Successful!
+                        </Typography>
+                        <Typography variant="subtitle1" color="textSecondary" align="center">
+                            Thank you for shopping at ZylkerKart. Your order has been placed.
+                        </Typography>
+                        <Grid item style={{ marginTop: '1rem', backgroundColor: '#e8f5e9', padding: '0.5rem 1.5rem', borderRadius: 20 }}>
+                            <Typography variant="body1" style={{ color: '#2e7d32', fontWeight: 500 }}>
+                                Order ID: #{paymentResponse.order_id}
+                            </Typography>
+                        </Grid>
                     </Grid>
-                    <Grid item>
-                        {`Exp: ${paymentResponse.exp_month}/${paymentResponse.exp_year}`}
-                    </Grid>
-                </Grid>
-            </Grid>
 
-            <Grid item container spacing={2}>
-                <Grid item container justify="flex-end" xs={2}>
-                    Paid Amount:
-                </Grid>
-                <Grid item style={{ fontWeight: "bold" }}>
-                    ${cartTotal + deliveryCharges}
-                </Grid>
-            </Grid>
+                    <Divider style={{ marginBottom: "2rem" }} />
 
-            <Grid item container spacing={2}>
-                <Grid item container justify="flex-end" xs={2}>
-                    Delivery Details:
-                </Grid>
-                <Grid item container xs={8} direction="column" style={{ fontWeight: "bold" }}>
-                    <Grid item>
-                        {shippingOption.deliveryType}
-                    </Grid>
-                    <Grid item>
-                        {`Delivered between ${shippingOption.estimatedDate}`}
-                    </Grid>
-                </Grid>
-            </Grid>
+                    {/* Details Grid */}
+                    <Grid container spacing={4}>
 
-            {renderShoppingProducts()}
+                        {/* Shipping Info */}
+                        <Grid item xs={12} sm={6}>
+                            <SectionHeader icon={<TruckIcon />} title="Delivery Information" />
+                            <div style={{ paddingLeft: 4 }}>
+                                <Typography variant="subtitle2" style={{ fontWeight: 'bold' }}>
+                                    {shippingAddressForm.firstName} {shippingAddressForm.lastName}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {shippingAddressForm.addressLine1}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {shippingAddressForm.addressLine2}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {shippingAddressForm.city}, {shippingAddressForm.stateCode} {shippingAddressForm.zipCode}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary" style={{ marginTop: 8 }}>
+                                    Phone: {shippingAddressForm.phoneNumber}
+                                </Typography>
+
+                                <Grid container alignItems="center" style={{ marginTop: 12, color: '#e01a2b' }}>
+                                    <Grid item>
+                                        <Typography variant="caption" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                            {shippingOption.deliveryType}
+                                        </Typography>
+                                    </Grid>
+                                </Grid>
+                                <Typography variant="caption" color="textSecondary">
+                                    Est. Delivery: {shippingOption.estimatedDate}
+                                </Typography>
+                            </div>
+                        </Grid>
+
+                        {/* Payment Info */}
+                        <Grid item xs={12} sm={6}>
+                            <SectionHeader icon={<CardIcon />} title="Payment Method" />
+                            <div style={{ paddingLeft: 4 }}>
+                                <Typography variant="body1" style={{ fontWeight: 500 }}>
+                                    {paymentResponse.brand ? paymentResponse.brand.toUpperCase() : 'Card'} **** {paymentResponse.last4}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Expires: {paymentResponse.exp_month}/{paymentResponse.exp_year}
+                                </Typography>
+                                <Typography variant="h6" style={{ marginTop: 16, fontWeight: 700 }}>
+                                    Total Paid: ${cartTotal + deliveryCharges}
+                                </Typography>
+
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<ReceiptIcon />}
+                                    href={paymentResponse.receipt_url}
+                                    target="_blank"
+                                    style={{ marginTop: 12, textTransform: 'none' }}
+                                >
+                                    View Receipt
+                                </Button>
+                            </div>
+                        </Grid>
+                    </Grid>
+
+                    <Divider style={{ margin: "2rem 0" }} />
+
+                    {/* Order Summary */}
+                    <SectionHeader icon={<svg style={{ width: 24, height: 24 }} viewBox="0 0 24 24"><path fill="currentColor" d="M15.55 13c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.37-.66-.11-1.48-.87-1.48H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7l1.1-2h7.45zM6.16 6h12.15l-2.76 5H8.53L6.16 6zM7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" /></svg>} title="Order Summary" />
+
+                    {renderShoppingProducts()}
+
+                    {/* Footer Actions */}
+                    <Grid container justify="center" style={{ marginTop: "3rem" }}>
+                        <Button
+                            component={Link}
+                            to="/"
+                            variant="contained"
+                            style={{ backgroundColor: '#e01a2b', color: 'white', padding: '10px 40px', fontWeight: 'bold' }}
+                        >
+                            Continue Shopping
+                        </Button>
+                    </Grid>
+
+                </Paper>
+            </Grid>
         </Grid>
     )
 }

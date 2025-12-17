@@ -5,8 +5,20 @@ import { connect } from "react-redux";
 import { sendPaymentToken } from "../../../actions"
 import log from 'loglevel';
 import AlertModal from "../../ui/alertModal";
+import PaymentModal from "./PaymentModal";
 
+// Since this is a class component, we'll need to wrap it or handle state differently.
+// However, looking at the code, it uses Redux props. 
+// A simpler way for a quick refactor in a class component is using internal state for the modal.
 class PaymentButton extends Component {
+
+    state = {
+        modalOpen: false
+    }
+
+    setModalOpen = (isOpen) => {
+        this.setState({ modalOpen: isOpen });
+    }
 
     _GrandTotal = 0
 
@@ -61,14 +73,16 @@ class PaymentButton extends Component {
 
                 {this.props.disabled ?
                     this.renderButton() :
-                    <StripeCheckout
-                        token={this.onToken}
-                        stripeKey={process.env.REACT_APP_STRIPE_PUBLISH_KEY}
-                        name="ZylkerKart Buy"
-                        amount={this.getGrandTotal()} // cents
-                        currency="USD">
-                        {this.renderButton()}
-                    </StripeCheckout>}
+                    <div style={{ width: '100%' }}>
+                        <PaymentModal
+                            open={this.state.modalOpen}
+                            handleClose={() => this.setModalOpen(false)}
+                            handlePayment={this.onToken}
+                        />
+                        <div onClick={() => this.setModalOpen(true)}>
+                            {this.renderButton()}
+                        </div>
+                    </div>}
             </>
         )
     }
