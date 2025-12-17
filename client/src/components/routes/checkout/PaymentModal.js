@@ -45,7 +45,6 @@ export default function PaymentModal({ open, handleClose, handlePayment }) {
             <DialogContent>
                 <DialogContentText>
                     Please enter your card details to complete the purchase.
-                    (This is a secure mock environment)
                 </DialogContentText>
 
                 <Grid container spacing={2}>

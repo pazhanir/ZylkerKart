@@ -61,8 +61,8 @@ def get_receipt():
             <div class="container">
                 <h1>Payment Successful!</h1>
                 <p>Thank you for shopping at ZylkerKart.</p>
-                <p>This is a mock receipt for your transaction.</p>
-                <p><strong>Amount Paid:</strong> $15.00 (Mock)</p>
+                <p>This is receipt for your transaction.</p>
+                <p><strong>Amount Paid:</strong> $15.00</p>
             </div>
         </body>
     </html>

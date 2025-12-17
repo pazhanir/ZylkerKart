@@ -8,7 +8,7 @@
 		<version>2.3.2.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.ujjaval.ecommerce</groupId>
+	<groupId>com.zylker.ecommerce</groupId>
 	<artifactId>search-suggestion-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>search-suggestion-service</name>
