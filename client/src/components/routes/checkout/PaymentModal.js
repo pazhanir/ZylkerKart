@@ -41,7 +41,7 @@ export default function PaymentModal({ open, handleClose, handlePayment }) {
 
     return (
         <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
-            <DialogTitle id="form-dialog-title" style={{ color: '#e01a2b' }}>ZylkerKart Secure Payment</DialogTitle>
+            <DialogTitle id="form-dialog-title" style={{ color: '#000000ff', fontWeight: 'bold' }}>ZylkerKart Secure Payment</DialogTitle>
             <DialogContent>
                 <DialogContentText>
                     Please enter your card details to complete the purchase.
