@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: common-data-service
+  namespace: zylkerkart
+spec:
+  selector:
+    matchLabels:
+      app: common-data-service
+  template:
+    metadata:
+      labels:
+        app: common-data-service
+    spec:
+      containers:
+      - name: common-data-service
+        image: impazhani/zylkerkart-common-data-service:latest
+        imagePullPolicy: Always
+        env:
+        - name: DB_HOST
+          value: mysql-db
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USER
+          value: mysqluser
+        - name: DB_PASS
+          value: mypass
+        - name: DB_SCHEMA
+          value: ecommerce_app_database
+        - name: REDIS_HOST
+          value: redis-cache
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          value: mypass
+        - name: ACTIVE_PROFILE
+          value: dev
+        - name: PORT
+          value: "9000"
+        - name: REACT_CLIENT_URL
+          value: "*"  # Allow CORS from anywhere in K8s
+        ports:
+        - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: common-data-service
+  namespace: zylkerkart
+spec:
+  selector:
+    app: common-data-service
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000

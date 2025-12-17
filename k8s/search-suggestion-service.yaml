@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-suggestion-service
+  namespace: zylkerkart
+spec:
+  selector:
+    matchLabels:
+      app: search-suggestion-service
+  template:
+    metadata:
+      labels:
+        app: search-suggestion-service
+    spec:
+      containers:
+      - name: search-suggestion-service
+        image: impazhani/zylkerkart-search-suggestion-service:latest
+        imagePullPolicy: Always
+        env:
+        - name: ACTIVE_PROFILE
+          value: dev
+        - name: PORT
+          value: "10000"
+        - name: COMMON_DATA_SERVICE_URL
+          value: "http://common-data-service:9000"
+        ports:
+        - containerPort: 10000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-suggestion-service
+  namespace: zylkerkart
+spec:
+  selector:
+    app: search-suggestion-service
+  ports:
+    - protocol: TCP
+      port: 10000
+      targetPort: 10000

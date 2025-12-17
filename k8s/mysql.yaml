@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-db
+  namespace: zylkerkart # Using default for simplicity in K3s demo
+spec:
+  selector:
+    matchLabels:
+      app: mysql-db
+  template:
+    metadata:
+      labels:
+        app: mysql-db
+    spec:
+      containers:
+      - name: mysql-db
+        image: mysql:8
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: mypass
+        - name: MYSQL_DATABASE
+          value: ecommerce_app_database
+        - name: MYSQL_USER
+          value: mysqluser
+        - name: MYSQL_PASSWORD
+          value: mypass
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-init
+          mountPath: /docker-entrypoint-initdb.d/user.sql
+          subPath: user.sql
+      volumes:
+      - name: mysql-init
+        configMap:
+          name: mysql-init-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-db
+  namespace: zylkerkart
+spec:
+  selector:
+    app: mysql-db
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+  namespace: zylkerkart
+data:
+  user.sql: |
+    GRANT ALL PRIVILEGES ON *.* TO 'mysqluser'@'%';
