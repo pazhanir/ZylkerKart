@@ -1,0 +1,25 @@
+
+# System
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDEs
+.idea
+.vscode
+*.iml
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Maven
+target/
+*.war
+*.ear
+*.jar
+
+# Environment
+.env
+.env.local
