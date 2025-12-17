@@ -5,6 +5,7 @@ import org.hibernate.transform.ResultTransformer;
 import java.util.List;
 
 @FunctionalInterface
+@SuppressWarnings("rawtypes")
 public interface IListResultTransformer extends ResultTransformer {
 
     /**

@@ -1,4 +1,4 @@
-import {makeStyles} from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core/styles";
 
 const useTabStyles = makeStyles((theme) => ({
     root: {
@@ -7,7 +7,7 @@ const useTabStyles = makeStyles((theme) => ({
     paperRoot: {
         '& > *': {
             width: theme.spacing(45),
-            height: theme.spacing(45),
+            height: theme.spacing(50),
         },
         position: "fixed",
         zIndex: 1201

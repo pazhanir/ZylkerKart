@@ -84,10 +84,9 @@ public class CommonDataController {
     @GetMapping(value = "/filter", params = "q")
     public ResponseEntity<?> getFilterAttributesByProducts(@RequestParam("q") String queryParams) {
 
-        // TODO: Add support for productname parameter for filter selection.
         String[] splitParams = queryParams.split("=");
-        if(splitParams.length >= 1 && splitParams[0].equals("productname")){
-            queryParams="category=all";
+        if (splitParams.length >= 1 && splitParams[0].equals("productname")) {
+            queryParams = "category=all";
         }
 
         FilterAttributesResponse result = commonDataService.getFilterAttributesByProducts(queryParams);

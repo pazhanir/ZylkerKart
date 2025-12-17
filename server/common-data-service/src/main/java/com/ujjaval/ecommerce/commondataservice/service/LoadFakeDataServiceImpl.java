@@ -16,7 +16,7 @@ import com.ujjaval.ecommerce.commondataservice.entity.sql.images.ApparelImages;
 import com.ujjaval.ecommerce.commondataservice.entity.sql.info.ProductInfo;
 import com.ujjaval.ecommerce.commondataservice.service.interfaces.LoadFakeDataService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +31,6 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
     enum FileNameType {
         SORT_BY, PRICE_RANGE
     }
-
 
     private final int WOMEN = 1;
     private final int MEN = 2;
@@ -73,9 +72,6 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
     @Autowired
     private PriceRangeCategoryRepository priceRangeCategoryRepository;
 
-    @Autowired
-    private Environment env;
-
     private String replaceSpacesWithUnderscore(String str) {
         return str.replaceAll("\\s", "_");
     }
@@ -112,7 +108,7 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
 
             InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(streamReader);
-            for (String line; (line = reader.readLine()) != null; ) {
+            for (String line; (line = reader.readLine()) != null;) {
                 String[] separatedData = line.split("\\|");
                 String type = separatedData[0];
                 String imageLocalPath = separatedData[1];
@@ -120,7 +116,8 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
                 String title = separatedData.length > 3 ? separatedData[3] : null;
                 String gender = separatedData.length > 4 ? separatedData[4] : null;
 
-//                System.out.println(String.format("filePath = %s, title = %s",filePath, title));
+                // System.out.println(String.format("filePath = %s, title = %s",filePath,
+                // title));
 
                 switch (type) {
                     case "brand":
@@ -133,8 +130,7 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
                         break;
                     case "category":
                         ApparelImages apparelImages = new ApparelImages(title, imageLocalPath, imageURL);
-                        ApparelCategory apparelCategory =
-                                apparelCategoryRepository.findByType(title);
+                        ApparelCategory apparelCategory = apparelCategoryRepository.findByType(title);
 
                         GenderCategory genderCategory = genderCategoryRepository.findByType(gender);
                         if (apparelCategory != null) {
@@ -192,27 +188,27 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
 
             switch (filenameType) {
                 case SORT_BY:
-                    for (String line; (line = reader.readLine()) != null; ) {
+                    for (String line; (line = reader.readLine()) != null;) {
                         // System.out.println("SortBy Line = " + line);
                         String[] result = line.split("\\|");
                         String id = result[0];
                         String type = result[1];
                         SortByCategory sortByCategory = sortByCategoryRepository.findByType(type);
                         if (sortByCategory == null) {
-                            sortByCategory = new SortByCategory(Integer.parseInt(id),type);
+                            sortByCategory = new SortByCategory(Integer.parseInt(id), type);
                             sortByCategoryRepository.save(sortByCategory);
                         }
                     }
                     break;
                 case PRICE_RANGE:
-                    for (String line; (line = reader.readLine()) != null; ) {
+                    for (String line; (line = reader.readLine()) != null;) {
                         // System.out.println("PriceRange Line = " + line);
                         String[] result = line.split("\\|");
                         String id = result[0];
                         String type = result[1];
                         PriceRangeCategory priceRangeCategory = priceRangeCategoryRepository.findByType(type);
                         if (priceRangeCategory == null) {
-                            priceRangeCategory = new PriceRangeCategory(Integer.parseInt(id),type);
+                            priceRangeCategory = new PriceRangeCategory(Integer.parseInt(id), type);
                             priceRangeCategoryRepository.save(priceRangeCategory);
                         }
                     }
@@ -254,10 +250,10 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
     public boolean loadTestData() {
         System.out.println("Loading test data in to database...");
 
-//        Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
-//                "cloud_name", env.getProperty("CLOUDINARY_CLOUD_NAME"),
-//                "api_key", env.getProperty("CLOUDINARY_API_KEY"),
-//                "api_secret", env.getProperty("CLOUDINARY_API_SECRET")));
+        // Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
+        // "cloud_name", env.getProperty("CLOUDINARY_CLOUD_NAME"),
+        // "api_key", env.getProperty("CLOUDINARY_API_KEY"),
+        // "api_secret", env.getProperty("CLOUDINARY_API_SECRET")));
 
         if (!loadFixedPatternData(String.format("%s/%s", DATA_DIRECTORY, SORT_BY_DATA), FileNameType.SORT_BY)) {
             return false;
@@ -269,25 +265,20 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
 
         List<PriceRangeCategory> priceRangeCategoryList = priceRangeCategoryRepository.findAll();
 
-        if(!priceRangeCategoryList.isEmpty()) {
-            for(PriceRangeCategory priceRangeCategory: priceRangeCategoryList) {
-                // System.out.println("STORED PRICE RANGE CATEGORY id = " + priceRangeCategory.getId() + "type = "+ priceRangeCategory.getType());
-            }
-        } else {
+        if (priceRangeCategoryList.isEmpty()) {
             System.out.println("PRICE RANGE CATEGORY LIST IS EMPTY..Hence exiting.....");
             return false;
         }
 
-
         try {
 
-//            File myObj = new File("filename.txt");
-//            if (myObj.createNewFile()) {
-//                System.out.println("File created: " + myObj.getName());
-//            } else {
-//                System.out.println("File already exists.");
-//            }
-//            PrintWriter writer = new PrintWriter(myObj, StandardCharsets.UTF_8);
+            // File myObj = new File("filename.txt");
+            // if (myObj.createNewFile()) {
+            // System.out.println("File created: " + myObj.getName());
+            // } else {
+            // System.out.println("File already exists.");
+            // }
+            // PrintWriter writer = new PrintWriter(myObj, StandardCharsets.UTF_8);
 
             InputStream inputStream = getClass()
                     .getClassLoader().getResourceAsStream(String.format("%s/%s", DATA_DIRECTORY, WEB_DATA));
@@ -299,7 +290,7 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
 
             InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(streamReader);
-            for (String line; (line = reader.readLine()) != null; ) {
+            for (String line; (line = reader.readLine()) != null;) {
                 String[] result = line.split("\\|");
                 String gender = result[1];
                 String apparel = result[2];
@@ -308,23 +299,24 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
                 String price = result[5];
                 String fileName = result[6];
                 String imageURL = result[7];
-                String imageLocalPath = replaceSpacesWithUnderscore(String.format("%s/%s/%s", gender, apparel, fileName));
+                String imageLocalPath = replaceSpacesWithUnderscore(
+                        String.format("%s/%s/%s", gender, apparel, fileName));
 
-//                File file = ResourceUtils.getFile("classpath:static/images_2/" + filePath);
-//
-//                if (!file.isFile()) {
-//                    System.out.println("filePath " + filePath + " does not exist.....");
-//                    return false;
-//                }
-//
-//                Map uploadResult = cloudinary.uploader().upload(file, ObjectUtils.emptyMap());
-//
-//                if (uploadResult.isEmpty()) {
-//                    System.out.println(file + ": unable to get response");
-//                }
-//
-//                writer.println(line + "|" + uploadResult.get("url"));
-
+                // File file = ResourceUtils.getFile("classpath:static/images_2/" + filePath);
+                //
+                // if (!file.isFile()) {
+                // System.out.println("filePath " + filePath + " does not exist.....");
+                // return false;
+                // }
+                //
+                // Map uploadResult = cloudinary.uploader().upload(file,
+                // ObjectUtils.emptyMap());
+                //
+                // if (uploadResult.isEmpty()) {
+                // System.out.println(file + ": unable to get response");
+                // }
+                //
+                // writer.println(line + "|" + uploadResult.get("url"));
 
                 GenderCategory genderCategory = genderCategoryRepository.findByType(gender);
                 ApparelCategory apparelCategory = apparelCategoryRepository.findByType(apparel);
@@ -372,7 +364,7 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
                 // System.out.println("price = " + price);
                 Optional<PriceRangeCategory> priceRangeCategory = findPriceRangeCategory(Integer.parseInt(price));
 
-                if(priceRangeCategory.isPresent()) {
+                if (priceRangeCategory.isPresent()) {
                     ProductInfo productInfo = new ProductInfo(1, productName, generateRandomDate(),
                             productBrandCategory, genderCategory, apparelCategory, priceRangeCategory.get(),
                             Integer.parseInt(price), generateRandomInt(1, 10),
@@ -386,7 +378,7 @@ public class LoadFakeDataServiceImpl implements LoadFakeDataService {
 
             }
             reader.close();
-//            writer.close();
+            // writer.close();
         } catch (FileNotFoundException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();

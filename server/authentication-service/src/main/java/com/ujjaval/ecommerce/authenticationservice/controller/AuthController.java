@@ -10,12 +10,6 @@ import com.ujjaval.ecommerce.authenticationservice.service.CustomUserDetailsServ
 import com.ujjaval.ecommerce.authenticationservice.util.JwtUtil;
 import com.ujjaval.ecommerce.authenticationservice.util.Md5Util;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,9 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -92,8 +83,7 @@ public class AuthController {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(),
-                            Md5Util.getInstance().getMd5Hash(authenticationRequest.getPassword()))
-            );
+                            Md5Util.getInstance().getMd5Hash(authenticationRequest.getPassword())));
         } catch (BadCredentialsException e) {
             return ResponseEntity.ok(new AuthenticationResponse(null, "Incorrect username or password.",
                     null));
@@ -102,7 +92,8 @@ public class AuthController {
                     null));
         }
 
-        final UserDetails userDetails = customUserDetailsService.loadUserByUsername(authenticationRequest.getUsername());
+        final UserDetails userDetails = customUserDetailsService
+                .loadUserByUsername(authenticationRequest.getUsername());
 
         final String jwt = jwtTokenUtil.generateToken(userDetails);
 

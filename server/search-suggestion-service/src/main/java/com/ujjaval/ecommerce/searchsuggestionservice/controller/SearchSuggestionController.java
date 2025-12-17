@@ -7,11 +7,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
 
 @RestController
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class SearchSuggestionController {
 
     @Autowired
@@ -31,8 +33,7 @@ public class SearchSuggestionController {
 
     @GetMapping("/default-search-suggestion")
     public ResponseEntity<?> defaultSearchSuggestions() {
-        List<SearchSuggestionKeywordInfo> resultList
-                = searchSuggestionService.getDefaultSearchSuggestions();
+        List<SearchSuggestionKeywordInfo> resultList = searchSuggestionService.getDefaultSearchSuggestions();
         return ResponseEntity.ok(resultList);
     }
 }

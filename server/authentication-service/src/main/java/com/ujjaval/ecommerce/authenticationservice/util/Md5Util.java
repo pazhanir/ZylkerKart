@@ -7,13 +7,12 @@ import java.security.NoSuchAlgorithmException;
 public class Md5Util {
 
     public static Md5Util singletonInstance = null;
-    private String data;
 
     private Md5Util() {
     }
 
     public static Md5Util getInstance() {
-        if(singletonInstance == null) {
+        if (singletonInstance == null) {
             return new Md5Util();
         }
         return singletonInstance;
