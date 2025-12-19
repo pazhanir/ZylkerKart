@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zylkerkart-ingress
+  namespace: zylkerkart
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: authentication-service
+                port:
+                  number: 7000
+          - path: /api/payment(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: payment-gateway-service
+                port:
+                  number: 9050
+          - path: /api/common(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: common-data-service
+                port:
+                  number: 9000
+          - path: /api/search(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: search-suggestion-service
+                port:
+                  number: 10000
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: react-ui
+                port:
+                  number: 80

@@ -12,6 +12,8 @@ spec:
       labels:
         app: authentication-service
     spec:
+      nodeSelector:
+        role: app
       containers:
       - name: authentication-service
         image: impazhani/zylkerkart-authentication-service:latest

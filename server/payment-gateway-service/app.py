@@ -28,14 +28,15 @@ def test():
     return "success"
 
 @app.post("/payment")
-def charge_customer(payload: dict = Body(...)):
+async def charge_customer(request: Request):
+    payload = await request.json()
     print(f"Received payment request: {payload}")
     
     # Generate mock values
     timestamp = int(time.time() * 1000)
     charge_id = f"ch_mock_{timestamp}"
     txn_id = f"txn_mock_{timestamp}"
-    receipt_url = "http://localhost:9050/receipt"
+    receipt_url = "/api/payment/receipt"
     
     # Construct response matching PaymentStatus.java
     response = {

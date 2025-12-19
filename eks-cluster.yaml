@@ -1,0 +1,36 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: zylkerkart-aws-eks
+  region: us-east-1
+
+managedNodeGroups:
+  - name: ng-services
+    instanceType: t3.medium
+    minSize: 2
+    maxSize: 2
+    labels:
+      role: app
+
+  - name: ng-mysql
+    instanceType: t3.small
+    minSize: 1
+    maxSize: 1
+    labels:
+      role: db-mysql
+    taints:
+      - key: dedicated
+        value: mysql
+        effect: NoSchedule
+
+  - name: ng-redis
+    instanceType: t3.small
+    minSize: 1
+    maxSize: 1
+    labels:
+      role: db-redis
+    taints:
+      - key: dedicated
+        value: redis
+        effect: NoSchedule

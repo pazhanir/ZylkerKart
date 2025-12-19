@@ -12,6 +12,13 @@ spec:
       labels:
         app: mysql-db
     spec:
+      nodeSelector:
+        role: db-mysql
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "mysql"
+          effect: "NoSchedule"
       containers:
       - name: mysql-db
         image: mysql:8

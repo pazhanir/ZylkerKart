@@ -12,9 +12,11 @@ spec:
       labels:
         app: payment-gateway-service
     spec:
+      nodeSelector:
+        role: app
       containers:
       - name: payment-gateway-service
-        image: impazhani/zylkerkart-payment-gateway-service:latest
+        image: impazhani/zylkerkart-payment-gateway-service:eks-v2
         imagePullPolicy: Always
         env:
         - name: DB_HOST

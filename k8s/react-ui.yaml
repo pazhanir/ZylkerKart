@@ -12,9 +12,11 @@ spec:
       labels:
         app: react-ui
     spec:
+      nodeSelector:
+        role: app
       containers:
       - name: react-ui
-        image: impazhani/zylkerkart-react-ui:latest
+        image: impazhani/zylkerkart-react-ui:eks-v1
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -27,7 +29,7 @@ metadata:
 spec:
   selector:
     app: react-ui
-  type: LoadBalancer # In K3d this maps to localhost
+  type: ClusterIP # Changed to ClusterIP for Ingress
   ports:
     - protocol: TCP
       port: 80

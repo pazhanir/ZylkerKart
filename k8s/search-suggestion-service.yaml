@@ -12,6 +12,8 @@ spec:
       labels:
         app: search-suggestion-service
     spec:
+      nodeSelector:
+        role: app
       containers:
       - name: search-suggestion-service
         image: impazhani/zylkerkart-search-suggestion-service:latest

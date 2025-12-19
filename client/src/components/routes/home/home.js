@@ -35,17 +35,22 @@ const Home = props => {
         props.setDefaultSearchSuggestions()
         authServiceAPI.post('/authenticate').catch(err => {
         })
+        let paymentUrl
         if (process.env.REACT_APP_PAYMENT_SERVICE_URL) {
-            axios({
-                method: 'post',
-                url: `${process.env.REACT_APP_PAYMENT_SERVICE_URL}/payment`,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                data: "xyz"
-            }).catch(err => {
-            })
+            paymentUrl = `${process.env.REACT_APP_PAYMENT_SERVICE_URL}/payment`
+        } else {
+            paymentUrl = `http://localhost:${process.env.REACT_APP_PAYMENT_SERVICE_PORT}/payment`
         }
+
+        axios({
+            method: 'post',
+            url: paymentUrl,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            data: "xyz"
+        }).catch(err => {
+        })
         ///////////////////////////////////////////////////////////
 
 

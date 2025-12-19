@@ -203,6 +203,7 @@ export const sendPaymentToken = (token) => async dispatch => {
 
     let url
     if (process.env.REACT_APP_PAYMENT_SERVICE_URL) {
+        // In production/EKS, this is '/api/payment', so url becomes '/api/payment/payment'
         url = `${process.env.REACT_APP_PAYMENT_SERVICE_URL}/payment`
     } else {
         url = `http://localhost:${process.env.REACT_APP_PAYMENT_SERVICE_PORT}/payment`

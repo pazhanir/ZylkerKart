@@ -12,6 +12,13 @@ spec:
       labels:
         app: redis-cache
     spec:
+      nodeSelector:
+        role: db-redis
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "redis"
+          effect: "NoSchedule"
       containers:
       - name: redis-cache
         image: redis:alpine
