@@ -288,6 +288,8 @@ The `k8s/` directory contains all necessary manifests.
     kubectl get ingress -n zylkerkart
     ```
 
+    open the <ALB_URL> is browser.
+
 ---
 
 ## 7. Site24x7 Monitoring Setup
@@ -362,11 +364,8 @@ kubectl apply -f k8s/load-generator.yaml
 *   Deploys the `k6` load generator pod.
 
 #### Step 3: Access Simulator Dashboard
-The simulator does not have an external Ingress by default. You can port-forward to access its dashboard:
-```bash
-kubectl port-forward -n site24x7-operator service/site24x7-sim 8000:80
-```
-Open `http://localhost:8000` in your browser. From here, you can:
+
+Open `http://<ALB_URL>/site24x7` in your browser. From here, you can:
 *   Start/Stop Load Generation.
 *   Schedule Chaos Experiments (Pod Kill, CPU Stress, Memory Stress).
 
