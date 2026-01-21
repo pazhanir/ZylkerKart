@@ -4,7 +4,7 @@
 
 ZylkerKart is a modern, cloud-native e-commerce platform designed to demonstrate a robust full-stack microservice architecture. It handles core e-commerce functionalities such as user authentication, product browsing (with search and suggestions), and payment processing.
 
-The application is built with a focus on observability and scalability, integrating **Site24x7 APM Insight** for application performance monitoring. It is containerized using Docker and orchestrated via Kubernetes (AWS EKS), featuring a clear separation of concerns between the frontend, backend services, and data persistence layers. This project serves as a reference implementation for deploying polyglot microservices (Java and Python) on a production-grade Kubernetes cluster.
+The application is built with a focus on observability and scalability, integrating **Site24x7 Fullstack Observability** for observability monitoring. It is containerized using Docker and orchestrated via Kubernetes (AWS EKS), featuring a clear separation of concerns between the frontend, backend services, and data persistence layers. This project serves as a reference implementation for deploying polyglot microservices (Java and Python) on a production-grade Kubernetes cluster.
 
 ## 2. Microservice Architecture
 
@@ -108,7 +108,7 @@ graph TD
 *   **Orchestration**: Kubernetes (AWS EKS)
 *   **Ingress**: Nginx Ingress Controller
 *   **Cluster Management**: `eksctl`
-*   **Monitoring**: Site24x7 APM Insight
+*   **Monitoring**: Site24x7 FSO
 
 ---
 
@@ -170,7 +170,7 @@ The **Site24x7 Simulator** (`site24x7-sim`) is a specialized control plane desig
     *   **Start Action**: If the current time matches an experiment's `start_time`, it marks it as `RUNNING` and executes the initial chaos action.
     *   **Stop Action**: When `end_time` is reached, it performs cleanup (e.g., deleting stress pods).
 
-### 5.2 Chaos Experiments (The "Monkey")
+### 5.2 Failure Experiments
 
 The simulator interacts directly with the Kubernetes API to inject failures.
 
@@ -195,65 +195,11 @@ The simulator acts as a proxy for the `k6-loadgen` service.
 
 ---
 
-## 6. Site24x7 Monitoring Setup
-
-This section outlines how to configure Site24x7 APM Insight and Kubernetes Monitoring for the application.
-
-### 6.1 APM Insight Configuration (Application Level)
-
-Each backend microservice is pre-configured with the Site24x7 APM Insight agent. To link these agents to your Site24x7 account, you must update the license key in the Kubernetes manifests.
-
-**Steps:**
-1.  **Locate Manifests**: The `S247_LICENSE_KEY` environment variable is defined in the following files:
-    *   `k8s/common-data-service.yaml`
-    *   `k8s/authentication-service.yaml`
-    *   `k8s/search-suggestion-service.yaml`
-    *   `k8s/payment-gateway-service.yaml`
-
-2.  **Update License Key**:
-    Replace the placeholder or existing value with your actual Site24x7 License Key.
-    ```yaml
-    env:
-      - name: S247_LICENSE_KEY
-        value: "<YOUR_SITE24X7_LICENSE_KEY>"
-    ```
-
-3.  **Apply Changes**:
-    After updating the YAML files, apply the changes to the cluster:
-    ```bash
-    kubectl apply -f k8s/
-    ```
-
-### 6.2 Kubernetes Monitoring (Cluster Level)
-
-To monitor the health and performance of the EKS cluster nodes and pods, deploy the Site24x7 Kubernetes Agent.
-
-**Prerequisites**:
-*   `site24x7-agent.yaml` file located in the project root.
-*   Your Site24x7 Device Key (different from the APM License Key, often referred to simply as the "Site24x7 Key").
-
-**Deployment Command:**
-Use the following one-liner to create the necessary secret and deploy the agent daemonset:
-
-```bash
-kubectl create secret generic site24x7-agent --from-literal KEY=<SITE24X7_KEY> && kubectl apply -f site24x7-agent.yaml
-```
-
-*Replace `<SITE24X7_KEY>` with your actual Device Key.*
-
-**Verification:**
-Check if the agent pods are running on all nodes (DaemonSet):
-```bash
-kubectl get pods -n default -l app=site24x7-agent
-```
-
----
-
-## 7. EKS Deployment Instructions
+## 6. EKS Deployment Instructions
 
 This guide details the steps to deploy the ZylkerKart application to an Amazon EKS cluster.
 
-### 7.1 Prerequisites
+### 6.1 Prerequisites
 
 Ensure the following tools are installed and configured on your local machine:
 
@@ -269,7 +215,7 @@ Ensure the following tools are installed and configured on your local machine:
 4.  **Docker**:
     *   Required for building images. Ensure you have `buildx` enabled if building on Apple Silicon (M1/M2/M3) for x86 EKS nodes.
 
-### 7.2 Cluster Configuration
+### 6.2 Cluster Configuration
 
 We use a **3-node group** architecture to optimize costs and isolate workloads. This configuration is defined in `eks-cluster.yaml`.
 
@@ -282,7 +228,7 @@ We use a **3-node group** architecture to optimize costs and isolate workloads. 
 **Why Taints?**
 Taints ensure that only the database pods (which require stable performance) are scheduled on their dedicated nodes, preventing "noisy neighbor" issues from the application pods.
 
-### 7.3 Deployment Process
+### 6.3 Deployment Process
 
 #### Step 1: Create the EKS Cluster
 Run the following command to provision the control plane and node groups. This will take approximately 15-20 minutes.
@@ -334,55 +280,133 @@ The `k8s/` directory contains all necessary manifests.
     *   `payment-gateway-service` (Python App)
     *   `react-ui` (Frontend)
     *   `ingress` (Routing rules)
+    *   This also applies the APM agent environment variables (requires Section 7 updates).
 
-#### Step 5: Deploy Simulator & Load Generator
-The simulator and load generator run in a separate namespace (`site24x7-operator`) to avoid interfering with the main application namespace.
-
-1.  **Deploy Simulator & Chaos Engine**:
-    ```bash
-    kubectl apply -f k8s/site24x7-sim.yaml
-    ```
-    *   Creates namespace `site24x7-operator`.
-    *   Deploys `site24x7-sim` pod with RBAC permissions to control other pods (for chaos experiments).
-
-2.  **Deploy Load Generator**:
-    ```bash
-    kubectl apply -f k8s/load-generator.yaml
-    ```
-    *   Deploys the `k6` load generator pod.
-
-3.  **Access Simulator Dashboard**:
-    The simulator does not have an external Ingress by default. You can port-forward to access its dashboard:
-    ```bash
-    kubectl port-forward -n site24x7-operator service/site24x7-sim 8000:80
-    ```
-    Open `http://localhost:8000` in your browser. From here, you can:
-    *   Start/Stop Load Generation.
-    *   Schedule Chaos Experiments (Pod Kill, CPU Stress, Memory Stress).
-
-#### Step 6: Verification
-
-1.  **Check Pod Status**:
-    Ensure all pods are in `Running` state and scheduled on the correct nodes.
-    ```bash
-    kubectl get pods -n zylkerkart -o wide
-    kubectl get pods -n site24x7-operator -o wide
-    ```
-
-2.  **Get Application URL**:
-    Find the external address of the Load Balancer provisioned by the Ingress Controller.
+3.  **Verify Application**:
+    Check if pods are running and verify the load balancer URL:
     ```bash
     kubectl get ingress -n zylkerkart
     ```
-    *Look for the `ADDRESS` column (e.g., `k8s-ingressn-nginxing-xxx.elb.us-east-1.amazonaws.com`).*
 
-3.  **Access in Browser**:
-    Open the Load Balancer URL. You should see the ZylkerKart homepage. 
-    *   `/` loads the UI.
-    *   Backend calls like `/api/common/products` should return JSON data.
+---
 
-### Troubleshooting
+## 7. Site24x7 Monitoring Setup
 
-*   **Pending Pods**: usually indicates insufficient resources or unsatisfied taints. Check `kubectl describe pod <pod-name> -n zylkerkart`.
-*   **CrashLoopBackOff**: Often caused by "Exec format error" (Architecture mismatch). Ensure you built images with `--platform linux/amd64`.
-*   **Database Connection Failures**: Verify the `mysql` pod is running on the `ng-mysql` node and that environment variables in deployment YAMLs match the DB credentials.
+This section outlines how to configure Site24x7 Fullstack Observability for the application.
+
+### 7.1 APM Insight Configuration (Application Level)
+
+Each backend microservice is pre-configured with the Site24x7 APM Insight agent. To link these agents to your Site24x7 account, you must update the license key in the Kubernetes manifests.
+
+**Steps:**
+1.  **Locate Manifests**: The `S247_LICENSE_KEY` environment variable is defined in the following files:
+    *   `k8s/common-data-service.yaml`
+    *   `k8s/authentication-service.yaml`
+    *   `k8s/search-suggestion-service.yaml`
+    *   `k8s/payment-gateway-service.yaml`
+
+2.  **Update License Key**:
+    Replace the placeholder or existing value with your actual Site24x7 License Key.
+    ```yaml
+    env:
+      - name: S247_LICENSE_KEY
+        value: "<YOUR_SITE24X7_LICENSE_KEY>"
+    ```
+
+3.  **Apply Changes**:
+    After updating the YAML files, apply the changes to the cluster:
+    ```bash
+    kubectl apply -f k8s/
+    ```
+
+### 7.2 Kubernetes Monitoring (Cluster Level)
+
+To monitor the health and performance of the EKS cluster nodes and pods, deploy the Site24x7 Kubernetes Agent.
+
+**Prerequisites**:
+*   `site24x7-agent.yaml` file located in the project root.
+*   Your Site24x7 Device Key (different from the APM License Key, often referred to simply as the "Site24x7 Key").
+
+**Deployment Command:**
+Use the following one-liner to create the necessary secret and deploy the agent daemonset:
+
+```bash
+kubectl create secret generic site24x7-agent --from-literal KEY=<SITE24X7_KEY> && kubectl apply -f site24x7-agent.yaml
+```
+
+*Replace `<SITE24X7_KEY>` with your actual Device Key.*
+
+**Verification:**
+Check if the agent pods are running on all nodes (DaemonSet):
+```bash
+kubectl get pods -n default -l app=site24x7-agent
+```
+
+---
+
+## 8. Site24x7 Simulator Deployment
+
+The simulator and load generator run in a separate namespace (`site24x7-operator`) to avoid interfering with the main application namespace.
+
+#### Step 1: Deploy Simulator & Chaos Engine
+```bash
+kubectl apply -f k8s/site24x7-sim.yaml
+```
+*   Creates namespace `site24x7-operator`.
+*   Deploys `site24x7-sim` pod with RBAC permissions to control other pods (for chaos experiments).
+
+#### Step 2: Deploy Load Generator
+```bash
+kubectl apply -f k8s/load-generator.yaml
+```
+*   Deploys the `k6` load generator pod.
+
+#### Step 3: Access Simulator Dashboard
+The simulator does not have an external Ingress by default. You can port-forward to access its dashboard:
+```bash
+kubectl port-forward -n site24x7-operator service/site24x7-sim 8000:80
+```
+Open `http://localhost:8000` in your browser. From here, you can:
+*   Start/Stop Load Generation.
+*   Schedule Chaos Experiments (Pod Kill, CPU Stress, Memory Stress).
+
+---
+
+## 9. Troubleshooting
+
+Common issues encountered during deployment and validation:
+
+### 9.1 Pods & Deployment Issues
+*   **CrashLoopBackOff (Exec format error)**:
+    *   **Cause**: Attempting to run ARM64 (Apple Silicon) images on x86 EKS nodes.
+    *   **Fix**: Rebuild docker images with `--platform linux/amd64` using `docker buildx`.
+*   **Pending Pods**:
+    *   **Cause**: Insufficient resources (CPU/Memory) or Node Affinity/Taints not met.
+    *   **Fix**: Check `kubectl describe pod <pod-name> -n zylkerkart`. Ensure `ng-mysql` and `ng-redis` node groups are scaled up and have the correct taints.
+*   **ImagePullBackOff**:
+    *   **Cause**: Image not found in repository or permission denied.
+    *   **Fix**: Verify image tag in YAML matches pushed tag. Ensure repo is public or K8s has `imagePullSecrets`.
+
+### 9.2 Connectivity & Networking
+*   **502 Bad Gateway (Ingress)**:
+    *   **Cause**: Backend service is crashing or not reachable by Ingress Controller.
+    *   **Fix**: Check logs of the specific service (e.g., `kubectl logs -n zylkerkart <pod>`).
+*   **404 Not Found (Frontend/API)**:
+    *   **Cause**: Ingress rewrite rules might be incorrect or path mismatch.
+    *   **Fix**: Ensure `nginx.ingress.kubernetes.io/rewrite-target: /$2` annotation is present and paths match regex (e.g., `/api/common(/|$)(.*)`).
+
+### 9.3 Database & State
+*   **Database Connection Refused**:
+    *   **Cause**: MySQL pod is not ready or Service name resolution failed.
+    *   **Fix**: Verify `mysql-db` service exists in `zylkerkart` namespace. Check if `DB_HOST` env var matches service name.
+*   **Redis Connection Errors**:
+    *   **Cause**: Redis requires password but app not providing it, or vice versa.
+    *   **Fix**: Check `REDIS_PASSWORD` env var in `common-data-service.yaml`.
+
+### 9.4 Monitoring & Simulation
+*   **Site24x7 Agent Not Reporting**:
+    *   **Cause**: Invalid License/Device Key or Network firewall blocking outbound traffic.
+    *   **Fix**: Check agent logs: `kubectl logs -n default -l app=site24x7-agent`.
+*   **Simulator Dashboard Not Loading**:
+    *   **Cause**: Port forwarding stopped or pod crashed.
+    *   **Fix**: Re-run port-forward command. Check simulator logs for python errors.
