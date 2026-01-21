@@ -178,12 +178,16 @@ The simulator interacts directly with the Kubernetes API to inject failures.
     *   **Process**: Finds a random running pod matching the target label (e.g., `app=authentication-service`) and deletes it. Kubernetes will automatically recreate it, testing startup time and recovery.
     *   **Logic**: Uses `client.CoreV1Api().delete_namespaced_pod()`.
 
-*   **CPU/Memory Pressure (Pod Level)**:
-    *   **Process**: Executes a command *inside* a running pod to consume resources.
-    *   **Logic**: Uses `stream(v1.connect_get_namespaced_pod_exec, ...)` to run a shell command like `dd if=/dev/zero ...` (to consume RAM) or infinite loops (to consume CPU).
+*   **CrashLoopBackOff**:
+    *   **Process**: Patches the target deployment's container command to `exit 1`, forcing the pod into a `CrashLoopBackOff` state.
+    *   **Logic**: Uses `patch_namespaced_deployment` to modify the pod spec and later restores the original state.
 
-*   **Node Stress**:
-    *   **Process**: Schedules a "rogue" pod on a specific node to consume that node's resources, affecting all pods on it.
+*   **CPU/Memory/Disk Pressure (Pod Level)**:
+    *   **Process**: Executes a command *inside* a running pod to consume resources.
+    *   **Logic**: Uses `stream(v1.connect_get_namespaced_pod_exec, ...)` to run a shell command like `dd` (to consume RAM/Disk) or infinite loops (to consume CPU).
+
+*   **Node Stress (CPU/Memory/Disk)**:
+    *   **Process**: Schedules a "rogue" pod on a specific node to consume that node's resources (CPU, Memory, or Disk), affecting all pods on it.
     *   **Logic**: Creates a specific Pod with `nodeSelector` targeting the victim node and a container running resource-intensive commands.
 
 ### 5.3 Load Generator Control

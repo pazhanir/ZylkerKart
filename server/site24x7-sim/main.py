@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from enum import Enum
 import asyncio
+import json
 import requests
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
@@ -38,6 +39,9 @@ class ExperimentType(str, Enum):
     MEMORY_PRESSURE = "MEMORY_PRESSURE"
     NODE_CPU_PRESSURE = "NODE_CPU_PRESSURE"
     NODE_MEMORY_PRESSURE = "NODE_MEMORY_PRESSURE"
+    DISK_PRESSURE = "DISK_PRESSURE"
+    NODE_DISK_PRESSURE = "NODE_DISK_PRESSURE"
+    CRASH_LOOP = "CRASH_LOOP"
 
 # ...
 
@@ -192,6 +196,45 @@ def inject_memory_pressure(namespace, label_selector, intensity=100):
     except Exception as e:
         return None, str(e)
 
+def inject_disk_pressure(namespace, label_selector, intensity=100):
+    running_pods = get_running_pods(namespace, label_selector)
+    if not running_pods:
+        return None, "No running pods"
+    
+    target = running_pods[0]
+    name = target.metadata.name
+    
+    v1 = client.CoreV1Api()
+    try:
+        # Intensity 100% = 1GB (Safe Cap), 10% = 100MB
+        mb = int(1024 * (intensity/100))
+        if mb < 10: mb = 10
+        
+        # Write to /tmp
+        cmd = ["/bin/sh", "-c", f"dd if=/dev/zero of=/tmp/chaos-disk-burn.dat bs=1M count={mb}"]
+        resp = stream(v1.connect_get_namespaced_pod_exec, name, namespace,
+                      command=cmd,
+                      stderr=True, stdin=False,
+                      stdout=True, tty=False)
+        return name, f"Injected Disk Pressure ({mb}MB)"
+    except Exception as e:
+        return None, str(e)
+
+def cleanup_disk_pressure(namespace, label_selector):
+    running_pods = get_running_pods(namespace, label_selector)
+    if not running_pods: return
+    
+    # Try to clean all matching pods just in case
+    v1 = client.CoreV1Api()
+    for p in running_pods:
+        try:
+            name = p.metadata.name
+            cmd = ["/bin/sh", "-c", "rm -f /tmp/chaos-disk-burn.dat"]
+            stream(v1.connect_get_namespaced_pod_exec, name, namespace,
+                   command=cmd, stderr=False, stdin=False, stdout=False, tty=False)
+        except: pass
+    return "Cleaned disk pressure files"
+
 def create_node_stress_pod(namespace, node_name, type, intensity):
     v1 = client.CoreV1Api()
     name = f"chaos-node-{node_name}-{int(datetime.now().timestamp())}"
@@ -211,6 +254,17 @@ def create_node_stress_pod(namespace, node_name, type, intensity):
         # Assuming ~4GB node, 50% = 2GB.
         mb = int(2048 * (intensity/100))
         cmd = ["/bin/sh", "-c", f"dd if=/dev/zero of=/dev/shm/stress-node bs=1M count={mb} && sleep 3600"]
+    
+    elif type == ExperimentType.NODE_DISK_PRESSURE:
+        # Fill Node Disk (Mounts /tmp from HostPath usually, but here simulating via emptyDir if possible or mapped volume)
+        # NOTE: For true node disk pressure, we need a HostPath mount. 
+        # Here we will write to the container's scratch space which if large enough can trigger eviction, 
+        # OR we assume the generic stress pod has restricted limits. 
+        # A safer "rogue" pod method is to just consume a large chunk (e.g. 5-10GB).
+        gb = int(10 * (intensity/100)) # Max 10GB
+        if gb < 1: gb = 1
+        # Write 1GB chunks
+        cmd = ["/bin/sh", "-c", f"dd if=/dev/zero of=/tmp/node-disk-burn.dat bs=1G count={gb} && sleep 3600"]
 
     pod_manifest = client.V1Pod(
         metadata=client.V1ObjectMeta(name=name, labels={"app": "chaos-node-stress", "type": str(type.value)}),
@@ -339,6 +393,52 @@ def delete_node_stress_pods(namespace, node_name):
     except:
         return 0
 
+def inject_crash_loop(namespace, deployment_name):
+    v1 = client.AppsV1Api()
+    try:
+        dep = v1.read_namespaced_deployment(deployment_name, namespace)
+        
+        if dep.metadata.annotations and "site24x7-sim/original-state" in dep.metadata.annotations:
+             return None, "Already in CrashLoop"
+
+        container = dep.spec.template.spec.containers[0]
+        original_state = {
+            "command": container.command,
+            "args": container.args
+        }
+        
+        if not dep.metadata.annotations: dep.metadata.annotations = {}
+        dep.metadata.annotations["site24x7-sim/original-state"] = json.dumps(original_state)
+        
+        container.command = ["/bin/sh", "-c", "exit 1"]
+        container.args = None 
+        
+        v1.patch_namespaced_deployment(deployment_name, namespace, dep)
+        return deployment_name, "Injected CrashLoop (Exit 1)"
+    except Exception as e:
+        return None, str(e)
+
+def cleanup_crash_loop(namespace, deployment_name):
+    v1 = client.AppsV1Api()
+    try:
+        dep = v1.read_namespaced_deployment(deployment_name, namespace)
+        
+        if not dep.metadata.annotations or "site24x7-sim/original-state" not in dep.metadata.annotations:
+            return None, "No state to restore"
+            
+        original_state = json.loads(dep.metadata.annotations["site24x7-sim/original-state"])
+        
+        container = dep.spec.template.spec.containers[0]
+        container.command = original_state["command"]
+        container.args = original_state["args"]
+        
+        del dep.metadata.annotations["site24x7-sim/original-state"]
+        
+        v1.patch_namespaced_deployment(deployment_name, namespace, dep)
+        return deployment_name, "Restored Deployment"
+    except Exception as e:
+        return None, str(e)
+
 async def scheduler_loop():
     logger.info("Scheduler loop started.")
     while True:
@@ -367,6 +467,9 @@ async def scheduler_loop():
                     if "NODE" in exp.req.type.value:
                         name, msg = create_node_stress_pod(exp.req.namespace, exp.req.target_pod, exp.req.type, exp.req.intensity)
                         exp.log(f"Node Stress: {msg}")
+                    elif exp.req.type == ExperimentType.CRASH_LOOP:
+                        name, msg = inject_crash_loop(exp.req.namespace, exp.req.target_pod)
+                        exp.log(f"CrashLoop: {msg}")
 
                 # End Experiment
                 if exp.status == ExperimentStatus.RUNNING and now >= end_dt:
@@ -380,6 +483,12 @@ async def scheduler_loop():
                     elif "NODE" in exp.req.type.value:
                         count = delete_node_stress_pods(exp.req.namespace, exp.req.target_pod)
                         exp.log(f"Cleanup: Deleted {count} stress pods.")
+                    elif exp.req.type == ExperimentType.CRASH_LOOP:
+                        name, msg = cleanup_crash_loop(exp.req.namespace, exp.req.target_pod)
+                        exp.log(f"Cleanup: {msg}")
+                    elif exp.req.type == ExperimentType.DISK_PRESSURE:
+                        cleanup_disk_pressure(exp.req.namespace, exp.label_selector)
+                        exp.log("Cleanup: Removed large files.")
                     continue
                 
                 # Running Loop (Intervals)
@@ -390,7 +499,7 @@ async def scheduler_loop():
                              name, msg = kill_random_pod(exp.req.namespace, exp.label_selector)
                              exp.log(f"⚡ Killed {name}")
                              exp.last_run = now
-                     elif exp.req.type in [ExperimentType.CPU_PRESSURE, ExperimentType.MEMORY_PRESSURE]:
+                     elif exp.req.type in [ExperimentType.CPU_PRESSURE, ExperimentType.MEMORY_PRESSURE, ExperimentType.DISK_PRESSURE]:
                          # Continuous pod stress: Run ONCE
                          if exp.last_run is None:
                              name, msg = None, ""
@@ -398,6 +507,8 @@ async def scheduler_loop():
                                  name, msg = inject_cpu_pressure(exp.req.namespace, exp.label_selector, exp.req.intensity)
                              elif exp.req.type == ExperimentType.MEMORY_PRESSURE:
                                  name, msg = inject_memory_pressure(exp.req.namespace, exp.label_selector, exp.req.intensity)
+                             elif exp.req.type == ExperimentType.DISK_PRESSURE:
+                                 name, msg = inject_disk_pressure(exp.req.namespace, exp.label_selector, exp.req.intensity)
                              
                              if name:
                                  exp.log(f"⚡ Stress: {name} ({msg})")
@@ -434,8 +545,8 @@ def create_experiment(req: CreateExperimentRequest):
     # Determine Selector or Node Target
     target = req.target_pod
     
-    if "NODE" in req.type:
-        # Target is the Node Name directly
+    if "NODE" in req.type or req.type == ExperimentType.CRASH_LOOP or req.type == ExperimentType.NODE_DISK_PRESSURE:
+        # Target is the Node Name or Deployment Name directly
         target = req.target_pod
     else:
         # Resolve label selector from Deployment

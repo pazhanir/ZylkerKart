@@ -361,8 +361,10 @@
                     <label>Failure Type</label>
                     <select id="failure-type" onchange="toggleIntensity()">
                         <option value="POD_KILL">💥 Kill Pod</option>
-                        <option value="CPU_PRESSURE">🔥 CPU Pressure</option>
-                        <option value="MEMORY_PRESSURE">🧠 Memory Pressure</option>
+                        <option value="CRASH_LOOP">☠️ CrashLoop BackOff</option>
+                        <option value="CPU_PRESSURE">🔥 Service CPU Pressure</option>
+                        <option value="MEMORY_PRESSURE">🧠 Service Memory Pressure</option>
+                        <option value="DISK_PRESSURE">💾 Disk Pressure</option>
                     </select>
                 </div>
                 <div class="control-group" id="interval-group">
@@ -520,8 +522,10 @@
                 // Update Types
                 typeSel.innerHTML = `
                     <option value="POD_KILL">💥 Kill Pod</option>
+                    <option value="CRASH_LOOP">☠️ CrashLoop BackOff</option>
                     <option value="CPU_PRESSURE">🔥 Service CPU Pressure</option>
                     <option value="MEMORY_PRESSURE">🧠 Service Memory Pressure</option>
+                    <option value="DISK_PRESSURE">💾 Disk Pressure</option>
                 `;
             } else {
                 label.innerText = "Select Target Node";
@@ -530,6 +534,7 @@
                 typeSel.innerHTML = `
                     <option value="NODE_CPU_PRESSURE">🔥 Node CPU Pressure</option>
                     <option value="NODE_MEMORY_PRESSURE">🧠 Node Memory Pressure</option>
+                    <option value="NODE_DISK_PRESSURE">💾 Node Disk Pressure</option>
                 `;
             }
             toggleIntensity(); // Refresh visibility
