@@ -6,7 +6,10 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+
   ingressClassName: nginx
   rules:
     - http:
@@ -39,6 +42,20 @@ spec:
                 name: search-suggestion-service
                 port:
                   number: 10000
+          - path: /site24x7(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: site24x7-sim-proxy
+                port:
+                  number: 80
+          - path: /site24x7operator(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: site24x7-sim-proxy
+                port:
+                  number: 80
           - path: /()(.*)
             pathType: ImplementationSpecific
             backend:
@@ -46,3 +63,12 @@ spec:
                 name: react-ui
                 port:
                   number: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: site24x7-sim-proxy
+  namespace: zylkerkart
+spec:
+  type: ExternalName
+  externalName: site24x7-sim.site24x7-operator.svc.cluster.local

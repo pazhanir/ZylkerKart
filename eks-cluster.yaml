@@ -2,7 +2,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: zylkerkart-aws-eks
+  name: Zylkerkart-FSO-demo
   region: us-east-1
 
 managedNodeGroups:

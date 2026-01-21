@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: site24x7-operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: site24x7-sim-sa
+  namespace: site24x7-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: site24x7-sim-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/exec", "nodes"]
+  verbs: ["list", "get", "delete", "create"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["list", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: site24x7-sim-binding
+subjects:
+- kind: ServiceAccount
+  name: site24x7-sim-sa
+  namespace: site24x7-operator
+roleRef:
+  kind: ClusterRole
+  name: site24x7-sim-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site24x7-sim
+  namespace: site24x7-operator
+  labels:
+    app: site24x7-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: site24x7-sim
+  template:
+    metadata:
+      labels:
+        app: site24x7-sim
+    spec:
+      serviceAccountName: site24x7-sim-sa
+      containers:
+      - name: site24x7-sim
+        image: impazhani/site24x7-sim:v17
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: site24x7-sim
+  namespace: site24x7-operator
+spec:
+  selector:
+    app: site24x7-sim
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000

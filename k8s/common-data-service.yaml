@@ -4,6 +4,7 @@ metadata:
   name: common-data-service
   namespace: zylkerkart
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: common-data-service
@@ -12,12 +13,31 @@ spec:
       labels:
         app: common-data-service
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - common-data-service
+              topologyKey: "kubernetes.io/hostname"
       nodeSelector:
         role: app
       containers:
       - name: common-data-service
         image: impazhani/zylkerkart-common-data-service:latest
         imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
         env:
         - name: DB_HOST
           value: mysql-db
@@ -41,8 +61,26 @@ spec:
           value: "9000"
         - name: REACT_CLIENT_URL
           value: "*"  # Allow CORS from anywhere in K8s
+        - name: JAVA_TOOL_OPTIONS
+          value: "-javaagent:/home/apm/apminsight-javaagent.jar -Dapminsight.application.name=zylkerkart-common-data-service"
+        - name: S247_LICENSE_KEY
+          value: "eu_23c74cf5bd4e2ecf8c60bf1fabcb84b2"
         ports:
         - containerPort: 9000
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      initContainers:
+      - name: agent-copy-init
+        image: site24x7/apminsight-javaagent:latest
+        imagePullPolicy: IfNotPresent
+        command: ['cp', '-r', '/opt/site24x7/.', '/home/apm']
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      volumes:
+      - name: s247agent
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

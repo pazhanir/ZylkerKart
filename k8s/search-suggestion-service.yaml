@@ -18,6 +18,13 @@ spec:
       - name: search-suggestion-service
         image: impazhani/zylkerkart-search-suggestion-service:latest
         imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
         env:
         - name: ACTIVE_PROFILE
           value: dev
@@ -25,8 +32,26 @@ spec:
           value: "10000"
         - name: COMMON_DATA_SERVICE_URL
           value: "http://common-data-service:9000"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-javaagent:/home/apm/apminsight-javaagent.jar -Dapminsight.application.name=zylkerkart-search-suggestion-service"
+        - name: S247_LICENSE_KEY
+          value: "eu_23c74cf5bd4e2ecf8c60bf1fabcb84b2"
         ports:
         - containerPort: 10000
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      initContainers:
+      - name: agent-copy-init
+        image: site24x7/apminsight-javaagent:latest
+        imagePullPolicy: IfNotPresent
+        command: ['cp', '-r', '/opt/site24x7/.', '/home/apm']
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      volumes:
+      - name: s247agent
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

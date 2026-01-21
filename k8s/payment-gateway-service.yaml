@@ -18,6 +18,13 @@ spec:
       - name: payment-gateway-service
         image: impazhani/zylkerkart-payment-gateway-service:eks-v2
         imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
         env:
         - name: DB_HOST
           value: mysql-db
@@ -39,8 +46,31 @@ spec:
           value: dev
         - name: PORT
           value: "9050"
+        - name: APM_APP_NAME
+          value: "zylkerkart-payment-gateway-service"
+        - name: S247_LICENSE_KEY
+          value: "eu_23c74cf5bd4e2ecf8c60bf1fabcb84b2"
+        - name: APP_RUN_COMMAND
+          value: "uvicorn app:app --host 0.0.0.0 --port 9050"
+        - name: PYTHONPATH
+          value: "/home/apm/agent:/home/apm/agent/apminsight/bootstrap"
+        command: ["/bin/sh", "-c", "/home/apm/agent_start.sh"]
         ports:
         - containerPort: 9050
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      initContainers:
+      - name: agent-copy
+        image: site24x7/apminsight-pythonagent:latest
+        imagePullPolicy: IfNotPresent
+        command: ['cp', '-r', '/opt/site24x7/.', '/home/apm']
+        volumeMounts:
+        - name: s247agent
+          mountPath: /home/apm
+      volumes:
+      - name: s247agent
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
