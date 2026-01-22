@@ -361,6 +361,8 @@
                     <label>Failure Type</label>
                     <select id="failure-type" onchange="toggleIntensity()">
                         <option value="POD_KILL">💥 Kill Pod</option>
+                        <option value="POD_EVICTION">🚪 Evict Pod (respects PDB)</option>
+                        <option value="OOM_KILL">💀 OOM Kill</option>
                         <option value="CRASH_LOOP">☠️ CrashLoop BackOff</option>
                         <option value="CPU_PRESSURE">🔥 Service CPU Pressure</option>
                         <option value="MEMORY_PRESSURE">🧠 Service Memory Pressure</option>

@@ -54,7 +54,7 @@ spec:
       serviceAccountName: site24x7-sim-sa
       containers:
       - name: site24x7-sim
-        image: impazhani/site24x7-sim:v20
+        image: impazhani/site24x7-sim:v28
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
