@@ -178,6 +178,15 @@ The simulator interacts directly with the Kubernetes API to inject failures.
     *   **Process**: Finds a random running pod matching the target label (e.g., `app=authentication-service`) and deletes it. Kubernetes will automatically recreate it, testing startup time and recovery.
     *   **Logic**: Uses `client.CoreV1Api().delete_namespaced_pod()`.
 
+*   **POD_EVICTION**:
+    *   **Process**: Forcefully evicts a pod with zero grace period, bypassing PodDisruptionBudgets for immediate termination.
+    *   **Logic**: Uses `delete_namespaced_pod()` with `grace_period_seconds=0` and `propagation_policy='Foreground'`.
+
+*   **OOM_KILL**:
+    *   **Process**: Triggers an Out-of-Memory kill by spawning parallel memory-consuming processes inside the target pod.
+    *   **Logic**: Uses `kubectl exec` to run 4 parallel `dd` commands writing to `/dev/shm` (2GB+ total allocation), causing the Linux OOM killer to terminate the container.
+    *   **Result**: Pod shows `OOMKilled` status, container restart count increases.
+
 *   **CrashLoopBackOff**:
     *   **Process**: Patches the target deployment's container command to `exit 1`, forcing the pod into a `CrashLoopBackOff` state.
     *   **Logic**: Uses `patch_namespaced_deployment` to modify the pod spec and later restores the original state.
