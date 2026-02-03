@@ -65,6 +65,8 @@ spec:
           value: "-javaagent:/home/apm/apminsight-javaagent.jar -Dapminsight.application.name=zylkerkart-common-data-service"
         - name: S247_LICENSE_KEY
           value: "<YOUR_SITE24X7_LICENSE_KEY>"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
         ports:
         - containerPort: 9000
         volumeMounts:
