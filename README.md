@@ -311,7 +311,7 @@ This section outlines how to configure Site24x7 Fullstack Observability for the 
 
 ### 7.1 APM Insight Configuration (Application Level)
 
-Each backend microservice is pre-configured with the Site24x7 APM Insight agent. The license key is stored in a **Kubernetes Secret** to avoid committing sensitive credentials to git.
+Each backend microservice is pre-configured with the Site24x7 APM Insight agent. In this setup license key needs is stored in a **Kubernetes Secret**.
 
 **Steps:**
 
@@ -346,8 +346,6 @@ Each backend microservice is pre-configured with the Site24x7 APM Insight agent.
     kubectl apply -f k8s/
     ```
 
-4.  **Enable Monitors in Site24x7 Console**:
-    After deployment, go to Site24x7 → APM → Java/Python → Applications and **enable** the monitors. The agents will show as "Managed" until activated.
 
 ### 7.2 Kubernetes Monitoring (Cluster Level)
 
@@ -355,7 +353,7 @@ To monitor the health and performance of the EKS cluster nodes and pods, deploy 
 
 **Prerequisites**:
 *   `site24x7-agent.yaml` file located in the project root.
-*   Your Site24x7 Device Key (different from the APM License Key).
+*   Your Site24x7 Key.
 
 **Deployment Command:**
 ```bash
