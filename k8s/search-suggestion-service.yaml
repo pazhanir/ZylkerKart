@@ -35,7 +35,10 @@ spec:
         - name: JAVA_TOOL_OPTIONS
           value: "-javaagent:/home/apm/apminsight-javaagent.jar -Dapminsight.application.name=zylkerkart-search-suggestion-service"
         - name: S247_LICENSE_KEY
-          value: "<YOUR_SITE24X7_LICENSE_KEY>"
+          valueFrom:
+            secretKeyRef:
+              name: site24x7-apm-secret
+              key: license-key
         ports:
         - containerPort: 10000
         volumeMounts:

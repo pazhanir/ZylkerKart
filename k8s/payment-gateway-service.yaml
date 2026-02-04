@@ -49,7 +49,10 @@ spec:
         - name: APM_APP_NAME
           value: "zylkerkart-payment-gateway-service"
         - name: S247_LICENSE_KEY
-          value: "<YOUR_SITE24X7_LICENSE_KEY>"
+          valueFrom:
+            secretKeyRef:
+              name: site24x7-apm-secret
+              key: license-key
         - name: APP_RUN_COMMAND
           value: "uvicorn app:app --host 0.0.0.0 --port 9050"
         - name: PYTHONPATH
