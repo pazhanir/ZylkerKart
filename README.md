@@ -311,28 +311,43 @@ This section outlines how to configure Site24x7 Fullstack Observability for the 
 
 ### 7.1 APM Insight Configuration (Application Level)
 
-Each backend microservice is pre-configured with the Site24x7 APM Insight agent. To link these agents to your Site24x7 account, you must update the license key in the Kubernetes manifests.
+Each backend microservice is pre-configured with the Site24x7 APM Insight agent. The license key is stored in a **Kubernetes Secret** to avoid committing sensitive credentials to git.
 
 **Steps:**
-1.  **Locate Manifests**: The `S247_LICENSE_KEY` environment variable is defined in the following files:
+
+1.  **Create the Kubernetes Secret**:
+    Create a secret containing your Site24x7 License Key (this is NOT committed to git):
+    ```bash
+    kubectl create secret generic site24x7-apm-secret \
+      --from-literal=license-key=<YOUR_SITE24X7_LICENSE_KEY> \
+      -n zylkerkart
+    ```
+    *Replace `<YOUR_SITE24X7_LICENSE_KEY>` with your actual license key.*
+
+2.  **Deploy the Services**:
+    The following manifests are pre-configured to reference the secret:
     *   `k8s/common-data-service.yaml`
     *   `k8s/authentication-service.yaml`
     *   `k8s/search-suggestion-service.yaml`
     *   `k8s/payment-gateway-service.yaml`
 
-2.  **Update License Key**:
-    Replace the placeholder or existing value with your actual Site24x7 License Key.
+    The secret reference in the YAML looks like:
     ```yaml
     env:
       - name: S247_LICENSE_KEY
-        value: "<YOUR_SITE24X7_LICENSE_KEY>"
+        valueFrom:
+          secretKeyRef:
+            name: site24x7-apm-secret
+            key: license-key
     ```
 
 3.  **Apply Changes**:
-    After updating the YAML files, apply the changes to the cluster:
     ```bash
     kubectl apply -f k8s/
     ```
+
+4.  **Enable Monitors in Site24x7 Console**:
+    After deployment, go to Site24x7 → APM → Java/Python → Applications and **enable** the monitors. The agents will show as "Managed" until activated.
 
 ### 7.2 Kubernetes Monitoring (Cluster Level)
 
@@ -340,19 +355,14 @@ To monitor the health and performance of the EKS cluster nodes and pods, deploy 
 
 **Prerequisites**:
 *   `site24x7-agent.yaml` file located in the project root.
-*   Your Site24x7 Device Key (different from the APM License Key, often referred to simply as the "Site24x7 Key").
+*   Your Site24x7 Device Key (different from the APM License Key).
 
 **Deployment Command:**
-Use the following one-liner to create the necessary secret and deploy the agent daemonset:
-
 ```bash
 kubectl create secret generic site24x7-agent --from-literal KEY=<SITE24X7_KEY> && kubectl apply -f site24x7-agent.yaml
 ```
 
-*Replace `<SITE24X7_KEY>` with your actual Device Key.*
-
 **Verification:**
-Check if the agent pods are running on all nodes (DaemonSet):
 ```bash
 kubectl get pods -n default -l app=site24x7-agent
 ```
@@ -411,13 +421,30 @@ Common issues encountered during deployment and validation:
 *   **Database Connection Refused**:
     *   **Cause**: MySQL pod is not ready or Service name resolution failed.
     *   **Fix**: Verify `mysql-db` service exists in `zylkerkart` namespace. Check if `DB_HOST` env var matches service name.
+*   **Data Lost After Pod Restart**:
+    *   **Cause**: MySQL was running without persistent storage.
+    *   **Fix**: MySQL now uses a `PersistentVolumeClaim` (10Gi EBS volume). Ensure the AWS EBS CSI driver is installed:
+        ```bash
+        eksctl create addon --name aws-ebs-csi-driver --cluster <CLUSTER_NAME>
+        aws iam attach-role-policy --role-name <NODE_ROLE_NAME> \
+          --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+        ```
+*   **Tables Not Created (Hibernate)**:
+    *   **Cause**: `SPRING_JPA_HIBERNATE_DDL_AUTO` not set to `create` or `update`.
+    *   **Fix**: The `common-data-service` uses `ddl-auto=create` to auto-generate tables on startup.
 *   **Redis Connection Errors**:
     *   **Cause**: Redis requires password but app not providing it, or vice versa.
     *   **Fix**: Check `REDIS_PASSWORD` env var in `common-data-service.yaml`.
 
 ### 9.4 Monitoring & Simulation
-*   **Site24x7 Agent Not Reporting**:
-    *   **Cause**: Invalid License/Device Key or Network firewall blocking outbound traffic.
+*   **Site24x7 APM Agent Not Reporting**:
+    *   **Cause 1**: License key secret not created.
+    *   **Fix**: Create the secret: `kubectl create secret generic site24x7-apm-secret --from-literal=license-key=<KEY> -n zylkerkart`
+    *   **Cause 2**: Agent showing "911 - Manage the agent" in logs.
+    *   **Fix**: Go to Site24x7 → APM → Applications and **enable/activate** the monitor.
+    *   **Verify**: Check agent logs: `kubectl exec -n zylkerkart <pod> -- cat /home/apm/*/apminsight_agent_*.log | tail -20`
+*   **Site24x7 Kubernetes Agent Not Reporting**:
+    *   **Cause**: Invalid Device Key or Network firewall blocking outbound traffic.
     *   **Fix**: Check agent logs: `kubectl logs -n default -l app=site24x7-agent`.
 *   **Simulator Dashboard Not Loading**:
     *   **Cause**: Port forwarding stopped or pod crashed.
